@@ -44,7 +44,15 @@ echo "::endgroup::"
 echo "::group:: Install Packages"
 
 # Install packages using dnf5
-dnf5 install -y webkit2gtk4.0
+mkdir -p /var/opt/cisco/secureclient/vpn
+mkdir -p /opt/cisco/secureclient/
+ln -s /var/opt/cisco/secureclient/vpn /opt/cisco/secureclient/vpn
+dnf5 install -y /ctx/build/cisco-secure-client-vpn-5.1.12.146-1.x86_64.rpm
+
+cp /ctx/build/2469.xml /opt/cisco/secureclient/vpn/profile/profile.xml
+
+dnf5 install -y /ctx/build/falcon-sensor-7.32.0-18504.el10.x86_64.rpm
+#/opt/CrowdStrike/falconctl -s --cid=YOUR_CID_HERE
 
 
 # Example using COPR with isolated pattern:

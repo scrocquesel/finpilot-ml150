@@ -34,6 +34,15 @@
 # See: https://docs.projectbluefin.io/contributing/ for architecture diagram
 ###############################################################################
 
+# Cisco Secure Client VPN posttrans fix stage
+# The posttrans script tries to start a service but systemd is not available during build time
+# This stage rebuilds the RPM without the last line of the posttrans script
+FROM quay.io/fedora/fedora:42 as ciscofix
+
+RUN dnf5 install -y rpmrebuild
+COPY build /build
+RUN rpmrebuild --change-spec-posttrans='sed "$ d"' -p -n /build/cisco-secure-client-vpn-5.1.12.146-1.x86_64.rpm
+
 # Context stage - combine local and imported OCI container resources
 FROM scratch AS ctx
 
@@ -63,7 +72,7 @@ FROM ghcr.io/ublue-os/bluefin-dx:stable
 ## Uncomment the following line if one desires to make /opt immutable and be able to be used
 ## by the package manager.
 
-# RUN rm /opt && mkdir /opt
+RUN rm /opt && mkdir /opt
 
 ### MODIFICATIONS
 ## Make modifications desired in your image and install packages by modifying the build scripts.
@@ -77,6 +86,7 @@ FROM ghcr.io/ublue-os/bluefin-dx:stable
 ## Scripts are run in numerical order (10-build.sh, 20-example.sh, etc.)
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=bind,from=ciscofix,source=/root/rpmbuild/RPMS/x86_64/cisco-secure-client-vpn-5.1.12.146-1.x86_64.rpm,target=/ctx/build/cisco-secure-client-vpn-5.1.12.146-1.x86_64.rpm \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
